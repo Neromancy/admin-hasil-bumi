@@ -1,145 +1,219 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, ShoppingCart, FileText, PlusCircle, TrendingUp } from 'lucide-react';
+// src/App.jsx
+import React, { useState, useEffect } from "react";
+import { LayoutDashboard, ArrowRightLeft, FileBarChart, Trash2, Menu, X, Sprout, Database, Package } from "lucide-react";
+import DashboardStats from "./components/DashboardStats";
+import TransactionForm from "./components/TransactionForm";
+import TransactionReport from "./components/TransactionReport";
+import ItemManager from "./components/ItemManager"; 
+import { generateId } from "./utils";
 
-const App = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [transactions, setTransactions] = useState([
-    { id: 1, tanggal: '2023-10-25', barang: 'Kapulaga', tipe: 'Masuk', berat: 50, total: 2500000 },
-    { id: 2, tanggal: '2023-10-26', barang: 'Cengkeh', tipe: 'Keluar', berat: 20, total: 3000000 },
-  ]);
+function App() {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [transactions, setTransactions] = useState([]);
+  const [items, setItems] = useState(["CENGKEH", "KAPULAGA", "LADA", "KOPI"]); 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const [formData, setFormData] = useState({ barang: 'Kapulaga', tipe: 'Masuk', berat: '', harga: '' });
+  // Load Transactions dari LocalStorage
+  useEffect(() => {
+    const savedData = localStorage.getItem("hasilBumiData");
+    if (savedData) {
+      setTransactions(JSON.parse(savedData));
+    }
+  }, []);
 
-  const handleAddTransaction = (e) => {
-    e.preventDefault();
-    const newTrans = {
-      id: Date.now(),
-      tanggal: new Date().toISOString().split('T')[0],
-      barang: formData.barang,
-      tipe: formData.tipe,
-      berat: Number(formData.berat),
-      total: formData.berat * formData.harga
-    };
-    setTransactions([newTrans, ...transactions]);
-    alert("Transaksi Berhasil Dicatat!");
+  // Load Items dari LocalStorage
+  useEffect(() => {
+    const savedItems = localStorage.getItem("hasilBumiItems");
+    if (savedItems) {
+      setItems(JSON.parse(savedItems));
+    }
+  }, []);
+
+  // Simpan Transactions ke LocalStorage
+  useEffect(() => {
+    localStorage.setItem("hasilBumiData", JSON.stringify(transactions));
+  }, [transactions]);
+
+  // Simpan Items ke LocalStorage
+  useEffect(() => {
+    localStorage.setItem("hasilBumiItems", JSON.stringify(items));
+  }, [items]);
+
+  const addTransaction = (newTx) => {
+    setTransactions([...transactions, newTx]);
+    alert("Transaksi berhasil disimpan!");
+    setActiveTab("dashboard");
   };
 
+  const addItem = (newItem) => {
+    setItems([...items, newItem]);
+    alert(`Barang "${newItem}" berhasil ditambahkan.`);
+  };
+
+  const deleteItem = (itemToDelete) => {
+    setItems(items.filter(i => i !== itemToDelete));
+  };
+
+  const clearData = () => {
+    if (confirm("Hapus SEMUA data transaksi? Data Barang tidak akan dihapus.")) {
+      setTransactions([]);
+      localStorage.removeItem("hasilBumiData");
+    }
+  };
+
+  // Fitur Load Dummy Data
+  const loadDummyData = () => {
+    if (transactions.length > 0) {
+      if (!confirm("Data sudah ada. Tambahkan data dummy?")) return;
+    }
+
+    const today = new Date();
+    const formatDate = (date) => date.toISOString().split("T")[0];
+    const daysAgo = (days) => {
+      const d = new Date();
+      d.setDate(today.getDate() - days);
+      return formatDate(d);
+    };
+
+    // Pastikan item dummy masuk ke daftar items agar dropdown tidak error
+    const dummyItemsNames = ["CENGKEH KERING", "CENGKEH BASAH", "KAPULAGA LOKAL", "LADA HITAM", "LADA PUTIH"];
+    const mergedItems = [...new Set([...items, ...dummyItemsNames])];
+    setItems(mergedItems);
+
+    const dummyData = [
+      { id: generateId(), date: daysAgo(10), type: "BELI", item: "CENGKEH KERING", qty: 100, price: 115000, total: 11500000 },
+      { id: generateId(), date: daysAgo(8), type: "BELI", item: "CENGKEH KERING", qty: 50, price: 112000, total: 5600000 },
+      { id: generateId(), date: daysAgo(2), type: "JUAL", item: "CENGKEH KERING", qty: 80, price: 135000, total: 10800000 },
+      { id: generateId(), date: daysAgo(15), type: "BELI", item: "KAPULAGA LOKAL", qty: 200, price: 65000, total: 13000000 },
+      { id: generateId(), date: daysAgo(12), type: "JUAL", item: "KAPULAGA LOKAL", qty: 150, price: 78000, total: 11700000 },
+      { id: generateId(), date: daysAgo(5), type: "BELI", item: "KAPULAGA LOKAL", qty: 100, price: 68000, total: 6800000 },
+      { id: generateId(), date: daysAgo(20), type: "BELI", item: "LADA HITAM", qty: 500, price: 55000, total: 27500000 },
+      { id: generateId(), date: daysAgo(18), type: "BELI", item: "LADA PUTIH", qty: 100, price: 90000, total: 9000000 },
+      { id: generateId(), date: daysAgo(3), type: "JUAL", item: "LADA HITAM", qty: 200, price: 62000, total: 12400000 },
+      { id: generateId(), date: daysAgo(0), type: "BELI", item: "CENGKEH BASAH", qty: 300, price: 35000, total: 10500000 },
+    ];
+
+    setTransactions([...transactions, ...dummyData]);
+    alert("Data Dummy Berhasil Dimuat");
+    setActiveTab("dashboard");
+    setIsMobileMenuOpen(false);
+  };
+
+  const NavItem = ({ id, icon: Icon, label }) => (
+    <button
+      onClick={() => {
+        setActiveTab(id);
+        setIsMobileMenuOpen(false);
+      }}
+      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-medium ${
+        activeTab === id
+          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
+          : "text-slate-300 hover:bg-slate-800 hover:text-white"
+      }`}
+    >
+      <Icon size={20} /> {label}
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-green-800 text-white p-6 shadow-xl">
-        <h1 className="text-2xl font-bold mb-10 flex items-center gap-2">
-          <TrendingUp /> BumiAdmin
-        </h1>
-        <nav className="space-y-4">
-          <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-3 p-3 rounded-lg ${activeTab === 'dashboard' ? 'bg-green-700' : 'hover:bg-green-700'}`}>
-            <LayoutDashboard size={20} /> Dashboard
-          </button>
-          <button onClick={() => setActiveTab('transaksi')} className={`w-full flex items-center gap-3 p-3 rounded-lg ${activeTab === 'transaksi' ? 'bg-green-700' : 'hover:bg-green-700'}`}>
-            <PlusCircle size={20} /> Input Transaksi
-          </button>
-          <button onClick={() => setActiveTab('laporan')} className={`w-full flex items-center gap-3 p-3 rounded-lg ${activeTab === 'laporan' ? 'bg-green-700' : 'hover:bg-green-700'}`}>
-            <FileText size={20} /> Laporan Harian
-          </button>
-        </nav>
+    <div className="h-[100dvh] w-full bg-slate-50 flex font-sans overflow-hidden">
+      
+      {/* Mobile Menu Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white z-50 px-4 flex items-center justify-between border-b border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-emerald-500 rounded-lg">
+                <Sprout size={20} className="text-white" />
+            </div>
+            {/* GANTI NAMA DI SINI (MOBILE) */}
+            <span className="font-bold text-lg text-slate-800">Admin</span>
+        </div>
+        <button 
+            className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 active:scale-95 transition-transform"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
+
+      {/* Sidebar Desktop */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out shadow-2xl
+        md:relative md:translate-x-0 md:shadow-none
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        pt-16 md:pt-0 
+      `}>
+        <div className="hidden md:flex p-8 items-center gap-3 border-b border-slate-800">
+          <div className="p-2 bg-emerald-500 rounded-lg">
+            <Sprout size={24} className="text-white" />
+          </div>
+          {/* GANTI NAMA DI SINI (DESKTOP) */}
+          <h1 className="font-bold text-2xl tracking-tight text-white">
+            Admin
+          </h1>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-3">
+          <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <NavItem id="transaksi" icon={ArrowRightLeft} label="Input Transaksi" />
+          <NavItem id="items" icon={Package} label="Kelola Barang" />
+          <NavItem id="laporan" icon={FileBarChart} label="Laporan & Data" />
+        </div>
+
+        <div className="p-6 border-t border-slate-800 space-y-3">
+          <button 
+            onClick={loadDummyData} 
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 rounded-xl text-sm font-medium transition-colors"
+          >
+            <Database size={18} /> Load Dummy
+          </button>
+          <button 
+            onClick={clearData} 
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded-xl text-sm font-medium transition-colors"
+          >
+            <Trash2 size={18} /> Reset Tx
+          </button>
+        </div>
+      </aside>
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
-        {activeTab === 'dashboard' && (
+      <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-slate-50">
+        <header className="hidden md:flex bg-white border-b border-slate-200 px-8 py-4 justify-between items-center sticky top-0 z-20">
           <div>
-            <h2 className="text-3xl font-bold mb-6 text-gray-800">Dashboard Utama</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
-                <p className="text-gray-500 uppercase text-xs font-bold">Stok Kapulaga</p>
-                <p className="text-2xl font-bold">1,240 Kg</p>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500">
-                <p className="text-gray-500 uppercase text-xs font-bold">Stok Cengkeh</p>
-                <p className="text-2xl font-bold">850 Kg</p>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                <p className="text-gray-500 uppercase text-xs font-bold">Total Transaksi Hari Ini</p>
-                <p className="text-2xl font-bold">Rp 12.500.000</p>
-              </div>
-            </div>
+            <h2 className="text-2xl font-bold text-slate-800">
+              {activeTab === 'dashboard' && 'Ringkasan Usaha'}
+              {activeTab === 'transaksi' && 'Transaksi Baru'}
+              {activeTab === 'items' && 'Master Data Barang'}
+              {activeTab === 'laporan' && 'Laporan Keuangan'}
+            </h2>
+            <p className="text-slate-500 text-sm">
+              {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
           </div>
-        )}
+        </header>
 
-        {activeTab === 'transaksi' && (
-          <div className="max-w-2xl bg-white p-8 rounded-xl shadow-md">
-            <h2 className="text-2xl font-bold mb-6">Input Transaksi Baru</h2>
-            <form onSubmit={handleAddTransaction} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nama Komoditas</label>
-                <select className="w-full p-2 border rounded-md" value={formData.barang} onChange={(e) => setFormData({...formData, barang: e.target.value})}>
-                  <option>Kapulaga</option>
-                  <option>Cengkeh</option>
-                  <option>Lada</option>
-                  <option>Kayu Manis</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Tipe Transaksi</label>
-                <div className="flex gap-4 mt-1">
-                  <label><input type="radio" name="tipe" checked={formData.tipe === 'Masuk'} onChange={() => setFormData({...formData, tipe: 'Masuk'})} /> Masuk (Beli)</label>
-                  <label><input type="radio" name="tipe" checked={formData.tipe === 'Keluar'} onChange={() => setFormData({...formData, tipe: 'Keluar'})} /> Keluar (Jual)</label>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Berat (Kg)</label>
-                  <input type="number" className="w-full p-2 border rounded-md" value={formData.berat} onChange={(e) => setFormData({...formData, berat: e.target.value})} required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Harga per Kg (Rp)</label>
-                  <input type="number" className="w-full p-2 border rounded-md" value={formData.harga} onChange={(e) => setFormData({...formData, harga: e.target.value})} required />
-                </div>
-              </div>
-              <button type="submit" className="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">Simpan Transaksi</button>
-            </form>
+        <div className="flex-1 overflow-y-auto p-3 md:p-8 pt-20 md:pt-8 scroll-smooth pb-32 md:pb-8">
+          <div className="max-w-7xl mx-auto">
+            {activeTab === "dashboard" && <DashboardStats transactions={transactions} />}
+            
+            {/* Mengirim props items ke Form agar bisa dropdown */}
+            {activeTab === "transaksi" && <TransactionForm onSave={addTransaction} items={items} setActiveTab={setActiveTab} />}
+            
+            {activeTab === "items" && <ItemManager items={items} onAdd={addItem} onDelete={deleteItem} />}
+            
+            {activeTab === "laporan" && <TransactionReport transactions={transactions} items={items}/>}
           </div>
-        )}
+        </div>
+      </main>
 
-        {activeTab === 'laporan' && (
-          <div className="bg-white p-8 rounded-xl shadow-md">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Laporan Transaksi</h2>
-              <button onClick={() => window.print()} className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2">
-                <FileText size={18} /> Cetak PDF
-              </button>
-            </div>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-100 italic">
-                  <th className="p-3 border-b">Tanggal</th>
-                  <th className="p-3 border-b">Barang</th>
-                  <th className="p-3 border-b">Tipe</th>
-                  <th className="p-3 border-b">Berat (Kg)</th>
-                  <th className="p-3 border-b">Total Harga</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="p-3 border-b">{t.tanggal}</td>
-                    <td className="p-3 border-b font-semibold">{t.barang}</td>
-                    <td className="p-3 border-b">
-                      <span className={`px-2 py-1 rounded text-xs ${t.tipe === 'Masuk' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {t.tipe}
-                      </span>
-                    </td>
-                    <td className="p-3 border-b">{t.berat} Kg</td>
-                    <td className="p-3 border-b">Rp {t.total.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Overlay Mobile */}
+      {isMobileMenuOpen && (
+        <div 
+            className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm" 
+            onClick={() => setIsMobileMenuOpen(false)} 
+        />
+      )}
     </div>
   );
-};
+}
 
 export default App;
