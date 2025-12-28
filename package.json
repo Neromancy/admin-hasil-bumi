@@ -2,7 +2,7 @@
   "name": "admin-hasil-bumi",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://github.com/Neromancy/admin-hasil-bumi",
+  "homepage": "https://neromancy.github.io/admin-hasil-bumi/",
   "type": "module",
   "scripts": {
     "dev": "vite",
